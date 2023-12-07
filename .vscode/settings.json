@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "cstring": "cpp",
+        "bitset": "cpp",
+        "cmath": "cpp"
+    }
+}
