@@ -4,8 +4,8 @@
 An Arduino sketch that turns a NodeMCU board into an Art-Net node.  
 Specifically built with home automation in mind, exposes MQTT hooks for when DMX alone just ain't enough!
 
-
-Tested with NodeMCU *only*. ESP32 should work with minor adjustments but currently lacking the hardware to try.  
+## Compatibility:
+**Only ESP8266 is supported** (tested on NodeMCU).  
 Other ESP8266 boards might work as long as they have the required pins and at least 1MB of flash.
 
 ## Support:
