@@ -37,35 +37,39 @@ rm(path.join(config.build.assetsRoot, config.build.assetsSubDirectory), err => {
       '  Tip: built files are meant to be served over an HTTP server.\n' +
       '  Opening index.html over file:// won\'t work.\n'
     ))
+
+    buildHeader()
   })
 })
 
+// Converts the built app index.html.gz into a byte stream and appends it to a C header file that can be included in web.h.
+// This way the entire app can fit in a PROGMEM string that can then be sent to the browser. No need for SPIFFS and the likes
+function buildHeader() {
+    const fs = require('fs')
 
-// Build header file for the final index.html.gz
-const fs = require('fs')
+    const dataFolder = 'dist/'
 
-const dataFolder = 'dist/'
+    var source = dataFolder + 'index.html.gz'
+    var destination = dataFolder + 'index.html.gz.h'
 
-var source = dataFolder + 'index.html.gz'
-var destination = dataFolder + 'index.html.gz.h'
+    var wstream = fs.createWriteStream(destination)
+    wstream.on('error', function (err) {
+        console.log(err)
+    });
 
-var wstream = fs.createWriteStream(destination)
-wstream.on('error', function (err) {
-    console.log(err)
-});
+    var data = fs.readFileSync(source)
 
-var data = fs.readFileSync(source)
+    const moment = require('moment')
+    wstream.write('const char *WEBAPP_LASTMODIFIED = "' + moment.utc().format('ddd, DD MMM YYYY HH:mm:ss') + ' GMT";\n')
+    wstream.write('#define WEBAPP_COMPRESSED_LEN ' + data.length + '\n')
+    wstream.write('const uint8_t WEBAPP_COMPRESSED[] PROGMEM = {')
 
-const moment = require('moment')
-wstream.write('const char *WEBAPP_LASTMODIFIED = "' + moment.utc().format('ddd, DD MMM YYYY HH:mm:ss') + ' GMT";\n')
-wstream.write('#define WEBAPP_COMPRESSED_LEN ' + data.length + '\n')
-wstream.write('const uint8_t WEBAPP_COMPRESSED[] PROGMEM = {')
+    for (let i = 0; i < data.length; i++) {
+        if (i % 1000 == 0) wstream.write("\n")
+        wstream.write('0x' + ('00' + data[i].toString(16)).slice(-2))
+        if (i < data.length - 1) wstream.write(',')
+    }
 
-for (let i = 0; i < data.length; i++) {
-    if (i % 1000 == 0) wstream.write("\n")
-    wstream.write('0x' + ('00' + data[i].toString(16)).slice(-2))
-    if (i < data.length - 1) wstream.write(',')
+    wstream.write('\n};')
+    wstream.end()
 }
-
-wstream.write('\n};')
-wstream.end()
