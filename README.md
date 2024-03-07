@@ -47,9 +47,14 @@ Note that you can't power pixels directly from the board.
 #### NodeMCU:
 - Grab the precompiled sketch from the [releases](https://github.com/LightJockey/EspDmxNode/releases/latest) page
 - Flash it with your preferred tool
+
 #### Other ESP8266 boards or compile from source:
-- Download VSCode
-- Add the PlatformIO extension
+#### Requirements
+- Node.js
+- Python
+- VSCode with the PlatformIO extension installed
+
+#### Instructions
 - Clone this repo
 - Open the folder within VSCode and PlatformIO should set the environment up
 - Adjust `platformio.ini` with your board's configuration
