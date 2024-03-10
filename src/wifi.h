@@ -35,11 +35,11 @@ void wifi_connect(uint8_t mode)
     // 3 - N
     //WiFi.setOutputPower(2.5);
 
-    // Initialize in AP mode when ssid not found in config
+    // Initialize in SoftAP mode when ssid not found in config
     if (mode == 0)
     {
         WiFi.mode(WIFI_AP);
-        log_P(LOG_WIFI, PSTR("Initializing in AP mode"));
+        log_P(LOG_WIFI, PSTR("Starting in SoftAP mode"));
 
         IPAddress softAPIP = IPAddress(192, 168, 1, 1);
         WiFi.softAPConfig(softAPIP, softAPIP, IPAddress(255, 255, 255, 0));
@@ -47,9 +47,9 @@ void wifi_connect(uint8_t mode)
 
         if (wifi_ap_started)
         {
-            logf_P(LOG_WIFI, PSTR("Running in AP mode (ssid: \"%s\", ip: %s)"), hostname, WiFi.softAPIP().toString().c_str());
+            logf_P(LOG_WIFI, PSTR("Running in SoftAP mode (ssid: \"%s\", ip: %s)"), hostname, WiFi.softAPIP().toString().c_str());
 
-            // Start a DNS server to redirect all requests to our IP when in AP mode
+            // Start a DNS server to redirect all requests to our IP when in SoftAP mode
             dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
             bool success = dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
             if (success)
@@ -58,7 +58,7 @@ void wifi_connect(uint8_t mode)
                 log_P(LOG_ERROR, PSTR("Failed to start DNS server!"));
         }
         else
-            log_P(LOG_ERROR, PSTR("Failed to start wifi in AP mode!"));
+            log_P(LOG_ERROR, PSTR("Failed to start in SoftAP mode!"));
     }
     // If an ssid is found in the config then Initialize in STATION mode and connect to it
     else
@@ -66,14 +66,30 @@ void wifi_connect(uint8_t mode)
         WiFi.mode(WIFI_STA);
         wifi_station_set_hostname(hostname);
 
-        logf_P(LOG_WIFI, PSTR("Initialized in STATION mode. Connecting to AP \"%s\" ..."), config.wifi_ssid);
+        logf_P(LOG_WIFI, PSTR("Running in STATION mode. Connecting to AP \"%s\" ..."), config.wifi_ssid);
+
         WiFi.begin(config.wifi_ssid, config.wifi_passphrase);
+
+        if (!config.dhcp)
+        {
+            // Set static IP if DHCP is not enabled in config
+            bool res = WiFi.config(IPAddress(config.ip[0], config.ip[1], config.ip[2], config.ip[3]),                      // ip
+                                   IPAddress(config.gateway[0], config.gateway[1], config.gateway[2], config.gateway[3]),  // gateway
+                                   IPAddress(config.netmask[0], config.netmask[1], config.netmask[2], config.netmask[3]),  // subnet
+                                   IPAddress(config.gateway[0], config.gateway[1], config.gateway[2], config.gateway[3])); // dns1
+            if (!res)
+            {
+                logf_P(LOG_WIFI, PSTR("Could not set static IP settings! Restarting in SoftAP mode ..."));
+                wifi_mode = 0;
+                wifi_connect(wifi_mode);
+            }
+        }
     }
 }
 void wifi_init()
 {
     wifi_mode = 0;
-    // Choose if we must initialize in STATION or AP mode
+    // Choose if we must initialize in STATION or SoftAP mode
     if (strlen(config.wifi_ssid) > 0)
         wifi_mode = 1;
 
@@ -96,12 +112,12 @@ void wifi_setup()
         {
             wifi_connected = true; // Setting this flag because I'm not sure if this callback gets fired on DHCP renews as well
 
-            logf_P(LOG_WIFI, PSTR("Connected to AP \"%s\" with %s settings (ip: %s, netmask: %s, gateway: %s)"),
-                config.wifi_ssid,
-                config.dhcp ? "DHCP" : "STATIC",
+            logf_P(LOG_WIFI, PSTR("Got net settings (dhcp: %u, ip: %s, netmask: %s, gateway: %s, dns: %s)"),
+                config.dhcp,
                 WiFi.localIP().toString().c_str(),
                 WiFi.subnetMask().toString().c_str(),
-                WiFi.gatewayIP().toString().c_str());
+                WiFi.gatewayIP().toString().c_str(),
+                WiFi.dnsIP().toString().c_str());
 
             artnet_init();
 
@@ -113,14 +129,7 @@ void wifi_setup()
         }
     });
     wifiConnectedHandler = WiFi.onStationModeConnected([](const WiFiEventStationModeConnected& event) {
-        if (config.dhcp)
-            return;
-        
-        // Set static IP if DHCP is not enabled in config
-        WiFi.config(IPAddress(config.ip[0], config.ip[1], config.ip[2], config.ip[3]),                      // ip
-                    IPAddress(config.gateway[0], config.gateway[1], config.gateway[2], config.gateway[3]),  // dns
-                    IPAddress(config.gateway[0], config.gateway[1], config.gateway[2], config.gateway[3]),  // gateway
-                    IPAddress(config.netmask[0], config.netmask[1], config.netmask[2], config.netmask[3])); // mask
+        logf_P(LOG_WIFI, PSTR("Connected to AP \"%s\", channel %i"), WiFi.SSID().c_str(), WiFi.channel());
     });
     wifiDisconnectedHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected& event) {
         wifi_connected = false;
@@ -132,7 +141,7 @@ void wifi_handle()
     // STATION mode
     if (wifi_mode > 0 && wifi_connected)
         ArduinoOTA.handle();
-    // AP mode
+    // SoftAP mode
     else if (wifi_ap_started)
         dnsServer.processNextRequest();
 }

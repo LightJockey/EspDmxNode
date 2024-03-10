@@ -32,7 +32,7 @@ void config_init()
     d_config.ip[0] = 192;
     d_config.ip[1] = 168;
     d_config.ip[2] = 1;
-    d_config.ip[3] = 100;
+    d_config.ip[3] = 1;
     d_config.netmask[0] = 255;
     d_config.netmask[1] = 255;
     d_config.netmask[2] = 255;
@@ -63,6 +63,13 @@ void config_init()
 
 char* config_print()
 {
+    // Print out net addresses in temp buffers
+    char _sIp[NET_ADDR_BUF_LEN], _sNetmask[NET_ADDR_BUF_LEN], _sGateway[NET_ADDR_BUF_LEN], _sMqttHost[NET_ADDR_BUF_LEN];
+    strlcpy(_sIp, printNetAddr(config.ip), sizeof(_sIp));
+    strlcpy(_sNetmask, printNetAddr(config.netmask), sizeof(_sNetmask));
+    strlcpy(_sGateway, printNetAddr(config.gateway), sizeof(_sGateway));
+    strlcpy(_sMqttHost, printNetAddr(config.mqtt_broker_address), sizeof(_sMqttHost));
+
     config_string_buf[0] = 0;
     // ALWAYS use the snprintf variant to prevent overflows, ffs
     snprintf_P(config_string_buf, sizeof(config_string_buf), PSTR("[\"%s\",\"%s\",  \"%s\",\"%s\",  \"%s\",\"%u\",\"%s\",\"%s\",\"%s\",  \"%u\",  \"%u\",  \"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",  \"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",\"%u\",  \"%u\",\"%s\",\"%u\",\"%s\",\"%s\",\"%u\",\"%u\",\"%s\",\"%s\",\"%s\",\"%s\"]"),
@@ -75,9 +82,9 @@ char* config_print()
 
         WiFi.macAddress().c_str(),
         config.dhcp,
-        wifi_mode > 0 ? config.dhcp ? WiFi.localIP().toString().c_str() : config.ip[0] == 0 ? WiFi.localIP().toString().c_str() : printNetAddr(config.ip) : "",
-        wifi_mode > 0 ? config.dhcp ? WiFi.subnetMask().toString().c_str() : config.netmask[0] == 0 ? WiFi.subnetMask().toString().c_str() : printNetAddr(config.netmask) : "",
-        wifi_mode > 0 ? config.dhcp ? WiFi.gatewayIP().toString().c_str() : config.gateway[0] == 0 ? WiFi.gatewayIP().toString().c_str() : printNetAddr(config.gateway) : "",
+        _sIp,
+        _sNetmask,
+        _sGateway,
 
         config.artnet_enabled,
 
@@ -104,7 +111,7 @@ char* config_print()
         config.port_b.smoothingthreshold,
 
         config.mqtt_enabled,
-        printNetAddr(config.mqtt_broker_address),
+        _sMqttHost,
         config.mqtt_broker_port,
         config.mqtt_topic_prefix,
         config.mqtt_topic_group,
@@ -150,7 +157,6 @@ void config_load()
     if (memcmp(config.id, d_config.id, sizeof(config.id)) != 0)
     {
         log_P(LOG_CONFIG, PSTR("No config found in flash"));
-        logf_P(LOG_DEBUG, PSTR("default id: %s, flash id: %s"), d_config.id, config.id);
         config_reset();
     }
     else if (config.version != CONFIG_VERSION)
@@ -185,7 +191,7 @@ bool config_parse(char *data, size_t size)
         return false;
     }
 
-    // Misc
+    // General
     strlcpy(config.node_name, config_json[0] | "", sizeof(config.node_name));
 
     // Wifi

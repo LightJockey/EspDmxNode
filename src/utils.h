@@ -18,7 +18,7 @@ int sign(int value)
     return 0;
 }
 
-// Need this to convert mqtt payloads to ints -- the payload is not null terminated so atoi etc won't do
+// Need this to convert mqtt and http payloads to ints -- the payload is not null terminated so atoi etc won't do
 int str2int(const char* str, int len)
 {
     int i;
@@ -43,9 +43,10 @@ char *deblank(char *input)
     return output;
 }
 
-void parseNetAddr(uint8_t addrBuffer[], const char *_addrString)
+#define NET_ADDR_BUF_LEN 17
+void parseNetAddr(uint8_t *addrBuffer, const char *_addrString)
 {
-    char addrString[16];
+    char addrString[NET_ADDR_BUF_LEN];
     strlcpy(addrString, _addrString, sizeof(addrString));
 
     char *tok;
@@ -59,9 +60,9 @@ void parseNetAddr(uint8_t addrBuffer[], const char *_addrString)
         idx++;
     }
 }
-char *printNetAddr(uint8_t addr[])
+char *printNetAddr(uint8_t *addr)
 {
-    static char buf[16];
+    static char buf[NET_ADDR_BUF_LEN];
     buf[0] = 0;
     if (addr[0] == 0 && addr[1] == 0 && addr[2] == 0 && addr[3] == 0)
         strlcpy(buf, "", sizeof(buf));

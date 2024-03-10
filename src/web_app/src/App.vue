@@ -2,7 +2,7 @@
   <div id="app">
     <input type="checkbox" id="theme-switch" v-model="darkTheme">
     <h2 id="title">{{config.name}}</h2>
-    <h5 id="subtitle">@ {{config.ip}}</h5>
+    <h5 id="subtitle">@ {{host}}</h5>
     <Nav/>
     <div id="content">
       <keep-alive> <!-- keeps components loaded even when not showed -->
@@ -25,7 +25,8 @@
     },
     data() {
       return {
-        darkTheme: 0
+        darkTheme: 0,
+        host: location.host
       }
     },
     computed: {
