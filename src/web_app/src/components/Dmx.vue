@@ -48,7 +48,7 @@ export default {
 	},
 	methods: {
 		fetchData() {
-	  		fetch('/channels')
+	  		fetch('/dmx')
 		    	.then(r => {
 					if (!r.ok)
 						throw new Error("Couldn't fetch DMX data!")

@@ -44,6 +44,10 @@ void log(LOG_LEVEL level, char *msg)
     snprintf_P(logBuffer[curLogIdx], LOG_BUFFER_SIZE, PSTR("[%s]: %s"), _log_level_name[level], msg);
     logEntries++;
 
+#ifdef DEBUG
+    Serial.println(logBuffer[curLogIdx]);
+#endif
+
     curLogIdx++;
     if (curLogIdx > LOG_BUFFER_ENTRIES - 1)
         curLogIdx = 0;

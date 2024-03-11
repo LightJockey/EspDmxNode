@@ -24,6 +24,10 @@ void mqtt_connect()
     if (mqtt_connected)
         return;
 
+    snprintf_P(mqtt_topic_state, sizeof(mqtt_topic_state), PSTR("%s/%s%s"), config.mqtt_topic_prefix, config.mqtt_topic_group, API_PATH_STATE);
+    snprintf_P(mqtt_topic_dimmer, sizeof(mqtt_topic_dimmer), PSTR("%s/%s%s"), config.mqtt_topic_prefix, config.mqtt_topic_group, API_PATH_DIMMER);
+    snprintf_P(mqtt_topic_scene, sizeof(mqtt_topic_scene), PSTR("%s%s"), config.mqtt_topic_prefix, API_PATH_SCENE);
+
     mqttClient.onConnect([](bool sessionPresent) {
         mqtt_connected = true;
         logf_P(LOG_MQTT, PSTR("Connected to broker %s:%u, session present: %d"), printNetAddr(config.mqtt_broker_address), config.mqtt_broker_port, sessionPresent);
@@ -42,10 +46,6 @@ void mqtt_connect()
     mqttClient.onSubscribe([](uint16_t packetId, uint8_t qos) {
         logf_P(LOG_MQTT, PSTR("Sub acknowledged. packetId: %u, qos: %u"), packetId, qos);
     });
-    
-    snprintf_P(mqtt_topic_state, sizeof(mqtt_topic_state), PSTR("%s/%s/state"), config.mqtt_topic_prefix, config.mqtt_topic_group);
-    snprintf_P(mqtt_topic_dimmer, sizeof(mqtt_topic_dimmer), PSTR("%s/%s/dimmer"), config.mqtt_topic_prefix, config.mqtt_topic_group);
-    snprintf_P(mqtt_topic_scene, sizeof(mqtt_topic_scene), PSTR("%s/scene"), config.mqtt_topic_prefix);
 
     logf_P(LOG_MQTT, PSTR("Connecting to broker at %s:%u ..."), printNetAddr(config.mqtt_broker_address), config.mqtt_broker_port);
     mqttClient.setServer(printNetAddr(config.mqtt_broker_address), config.mqtt_broker_port);

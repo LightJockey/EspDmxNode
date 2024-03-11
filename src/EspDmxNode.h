@@ -15,6 +15,9 @@ extern "C"
 }
 #include <errno.h>
 
+#include "log.h"
+#include "utils.h"
+
 const char *default_node_name = "EspDmxNode";
 const char *default_ota_password = "dmxnodeota";
 
@@ -91,9 +94,20 @@ uint32_t out_tLastFadeStart;
 float_t out_a_brightness_scale;
 float_t out_b_brightness_scale;
 bool out_isTestingOutput;
+#define NUM_SCENES 4
 
 void out_setup();
 void out_set_uni(uint8_t port, uint8_t *data, uint16_t numChans);
+inline void out_set_channel(uint16_t addr, uint8_t value)
+{
+    memset(out_poolCur + addr, value, sizeof(uint8_t));
+}
+char *out_print_channel(uint16_t addr)
+{
+    static char buf[4];
+    snprintf(buf, sizeof(buf), "%u", out_poolCur[addr]);
+    return buf;
+}
 void out_merge(bool isLoop);
 void out_send();
 void out_clear();
@@ -108,10 +122,6 @@ void dmx_handle_rdm_portB(rdm_data *data);
 void dmx_handle_tod_portA();
 void dmx_handle_tod_portB();
 
-inline void out_set_channel(uint16_t addr, uint8_t value)
-{
-    memset(out_poolMerged + addr, value, 1);
-}
 inline bool isOutputEnabled()
 {
     return out_numPorts > 0 && !out_isTestingOutput;
@@ -131,11 +141,60 @@ inline bool isValidDmxPort(uint8_t port)
     return port < out_numPorts && isEnabled;
 }
 
+const char API_PATH_STATE[] = "/state";
+const char API_PATH_DIMMER[] = "/dimmer";
+const char API_PATH_SCENE[] = "/scene";
+const char API_PATH_DMX[] = "/dmx";
+
+bool api_set_state(char *payload, size_t len)
+{
+    if (len == 0)
+        return false;
+        
+    if ((strncmp(payload, "ON", len) == 0 ||
+         strncmp(payload, "on", len) == 0 ||
+         strncmp(payload, "1", len) == 0))
+        out_set_dimmer(UINT8_MAX);
+    else if (strncmp(payload, "OFF", len) == 0 ||
+             strncmp(payload, "off", len) == 0 ||
+             strncmp(payload, "0", len) == 0)
+        out_set_dimmer(0);
+    else
+        return false;
+
+    return true;
+}
+bool api_set_dimmer(char *payload, size_t len)
+{
+    if (len == 0)
+        return false;
+    
+    int value = str2int(payload, len);
+    if (value < 0 || value > UINT8_MAX)
+        return false;
+    logf_P(LOG_DEBUG, PSTR("Node dimmer: %u"), value);
+    out_set_dimmer(value);
+
+    return true;
+}
+bool api_set_scene(char *payload, size_t len)
+{
+    if (len == 0)
+        return false;
+
+    int value = str2int(payload, len);
+    if (value < 1 || value > NUM_SCENES)
+        return false;
+    out_set_scene(value);
+
+    return true;
+}
+
 void restart()
 {
     artRDM.end();
     out_stop();
-    yield();
+    log_P(LOG_DEBUG, PSTR("Restarting ..."));
     ESP.restart();
 }
 
@@ -152,8 +211,6 @@ char *status_print()
     return buf;
 }
 
-#include "utils.h"
-#include "log.h"
 #include "mqtt.h"
 #include "wifi.h"
 #include "config.h"

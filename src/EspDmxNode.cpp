@@ -9,10 +9,12 @@ void setup()
 {
     ESP.wdtDisable();
 
+#ifdef DEBUG
+    Serial.begin(115200);
+#endif
+
     pinMode(RESET_PIN, INPUT);
     pinMode(DEBUG_LED_PIN, OUTPUT);
-
-    //Serial.begin(115200);
 
     logf_P(LOG_INFO, PSTR("Starting EspDmxNode v%s (build date: %s, %s) (mac: %s)"), FIRMWARE_VERSION, __DATE__, __TIME__, WiFi.macAddress().c_str());
 
@@ -41,25 +43,13 @@ void setup()
 
                 // mqtt_topic_state
                 if (strcmp(topic, mqtt_topic_state) == 0)
-                {
-                    if ((strncmp(payload, "ON", len) == 0 ||
-                            strncmp(payload, "on", len) == 0 ||
-                            strncmp(payload, "1", len) == 0))
-                        out_set_dimmer(255);
-                    else if (strncmp(payload, "OFF", len) == 0 ||
-                                strncmp(payload, "off", len) == 0 ||
-                                strncmp(payload, "0", len) == 0)
-                        out_set_dimmer(0);
-                }
+                    api_set_state(payload, len);
+                // mqtt_topic_dimmer
                 else if (strcmp(topic, mqtt_topic_dimmer) == 0)
-                {
-                    uint8_t value = str2int(payload, len);
-                    logf_P(LOG_DEBUG, PSTR("DMX dimmer value: %u"), value);
-                    out_set_dimmer(value);
-                }
+                    api_set_dimmer(payload, len);
                 // mqtt_topic_scene
                 else if (strcmp(topic, mqtt_topic_scene) == 0)
-                    out_set_scene(str2int(payload, len));
+                    api_set_scene(payload, len);
             });
         }
 
@@ -306,6 +296,11 @@ void out_setup()
 
     for (uint8_t portIdx = 0; portIdx < out_numPorts; portIdx++)
     {
+#if DEBUG   // Serial monitor and port A share the same GPIO1 (TX) pin
+        if (portIdx == 0)
+            continue;
+#endif
+
         bool portEnabled = portIdx == 0 ? config.port_a.enabled : config.port_b.enabled;
         if (!portEnabled)
             continue;
@@ -441,6 +436,7 @@ void out_send()
 {
     if (config.port_a.enabled)
     {
+#ifndef DEBUG
         if (config.port_a.type == PORT_DMX)
         {
             dmxA.chanUpdate(config.port_a.num_channels);
@@ -454,6 +450,7 @@ void out_send()
             pixelsA->Dirty();
             pixelsA->Show();
         }
+#endif
     }
     if (config.port_b.enabled)
     {
@@ -477,6 +474,7 @@ void out_clear()
 {
     if (config.port_a.enabled)
     {
+#ifndef DEBUG
         if (config.port_a.type == PORT_DMX)
         {
             dmxA.clearChans();
@@ -490,6 +488,7 @@ void out_clear()
             pixelsA->Dirty();
             pixelsA->Show();
         }
+#endif
     }
     if (config.port_b.enabled)
     {
@@ -518,6 +517,7 @@ void out_stop()
 
     if (config.port_a.enabled)
     {
+#ifndef DEBUG
         if (config.port_a.type == PORT_DMX)
             dmxA.end();
         else if (config.port_a.type == PORT_PIXELS)
@@ -525,6 +525,7 @@ void out_stop()
             delete pixelsA;
             pixelsA = NULL;
         }
+#endif
     }
     if (config.port_b.enabled)
     {
@@ -560,10 +561,16 @@ void out_test()
             if (port_type == PORT_DMX)
             {
                 out_set_channel(DMX_UNI_LEN * port + chIdx, 255);
+#ifndef DEBUG
                 dmxA.chanUpdate(DMX_UNI_LEN);
+#endif
                 dmxB.chanUpdate(DMX_UNI_LEN);
                 if (port == 0)
+                {
+#ifndef DEBUG
                     dmxA.handler();
+#endif
+                }
                 else
                     dmxB.handler();
             }
@@ -571,8 +578,10 @@ void out_test()
             {
                 if (port == 0)
                 {
+#ifndef DEBUG
                     pixelsA->SetPixelColor(chIdx, RgbColor(255, 255, 255));
                     pixelsA->Show();
+#endif
                 }
                 else
                 {
@@ -608,7 +617,8 @@ void out_set_dimmer(uint8_t value)
 void out_set_scene(uint8_t sceneIdx)
 {
     if (!isOutputEnabled() ||
-        sceneIdx == out_curSceneIdx)
+        sceneIdx == out_curSceneIdx ||
+        sceneIdx < 1 || sceneIdx > NUM_SCENES)
         return;
 
     // Flag all channels to their default "unassigned" state, so that we can see it while merging
@@ -680,7 +690,9 @@ void dmx_handle_rdm_portB(rdm_data *data)
 }
 void dmx_handle_tod_portA()
 {
+#ifndef DEBUG
     artRDM.artTODData(artnet_portA[0], artnet_portA[1], dmxA.todMan(), dmxA.todDev(), dmxA.todCount(), dmxA.todStatus());
+#endif    
 }
 void dmx_handle_tod_portB()
 {
