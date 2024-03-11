@@ -19,7 +19,7 @@
 			</Section>
 
 			<Section title="Firmware Update" class="info centered">
-				<p><input type="file" accept=".bin"></p>
+				<p><input @change="handleUpdateFile" type="file" accept=".bin" ref="file"></p>
 				<p><BaseButton @onclicked="updateFirmware()" text="Update"/></p>
 			</Section>
 		</div>
@@ -46,7 +46,8 @@ export default {
   		autoUpdateInterval: null,
   		isFetching: false,
   		status: [],
-  		logs: []
+  		logs: [],
+		updateFile: null
   	}
   },
   methods: {
@@ -118,6 +119,29 @@ export default {
 		if (confirmed)
 			fetch('/restart')
 				.then(r => location.reload())
+	},
+
+	handleUpdateFile() {
+		this.updateFile = this.$refs.file.files[0]
+	},
+	updateFirmware() {
+		if (!this.updateFile) {
+			alert('No file selected!')
+			return
+		}
+		let fd = new FormData()
+		fd.append('file', this.updateFile)
+		
+		fetch('/update', {
+			method: 'POST',
+			headers: {
+				'Auth': 'dmxnodeota'
+			},
+			body: fd
+		}).then(r => r.text()).then(r => {
+			this.fetchLogs()
+			alert(r)
+		})
 	}
   },
   computed: {

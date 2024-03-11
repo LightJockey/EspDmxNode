@@ -7,7 +7,7 @@
 */
 void setup()
 {
-    ESP.wdtDisable();
+    watchdog_disable();
 
 #ifdef DEBUG
     Serial.begin(115200);
@@ -58,7 +58,7 @@ void setup()
             artnet_stop();
             out_stop();
 
-            ESP.wdtDisable();
+            watchdog_disable();
             yield();
             log(LOG_OTA, (char *)"Starting fw update");
         });
@@ -87,8 +87,7 @@ void setup()
 
     out_setup();
 
-    // Reenable the watchdog with a 4s timeout
-    ESP.wdtEnable(WDTO_4S);
+    watchdog_enable();
 
     logf_P(LOG_INFO, PSTR("EspDmxNode \"%s\" started"), hostname);
 }
@@ -100,8 +99,6 @@ void setup()
 */
 void loop()
 {
-    //ESP.wdtFeed();
-
     wifi_handle();
 
     // Handle ArtNet

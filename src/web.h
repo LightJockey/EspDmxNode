@@ -58,6 +58,17 @@ public:
     }
 };
 
+bool web_check_ota_auth(AsyncWebServerRequest *request)
+{
+    AsyncWebHeader *authHeader = request->getHeader(PSTR("Auth"));
+    if (authHeader == NULL ||
+        strcmp(authHeader->value().c_str(), default_ota_password) != 0)
+    {
+        return false;
+    }
+    return true;
+}
+
 void web_init()
 {
     #pragma region NODE ENDPOINTS
@@ -131,7 +142,51 @@ void web_init()
         request->send(HTTPSTATUS_OK);
         restart();
     });
-    #pragma endregion
+    webServer.on(PSTR("/update"), HTTP_POST, [](AsyncWebServerRequest *request) {
+            if (!web_check_ota_auth(request))
+            {
+                request->send(401, CONTENTTYPE_TEXT, PSTR("Access Denied"));
+                return;
+            }
+            if (Update.hasError())
+            {
+                char buf[128];
+                snprintf_P(buf, sizeof(buf), PSTR("Update failed: %s"), Update.getError());
+                request->send(HTTPSTATUS_ERROR, CONTENTTYPE_TEXT, buf);
+            }
+            else
+                request->send(HTTPSTATUS_OK, CONTENTTYPE_TEXT, PSTR("Update successful! Restarting ..."));
+        }, [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+            if (!web_check_ota_auth(request))
+                return;
+
+            if (!index)
+            {
+                watchdog_disable();
+                Update.runAsync(true);
+
+                logf_P(LOG_INFO, PSTR("Starting update from file \"%s\" ..."), filename.c_str());
+                
+                if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
+                    log(LOG_INFO, (char *)Update.getError());
+            }
+            if (!Update.hasError())
+            {
+                if (Update.write(data, len) != len)
+                    log(LOG_INFO, (char *)Update.getError());
+            }
+            if (final)
+            {
+                if (Update.end(true))
+                    logf_P(LOG_INFO, PSTR("Successfully written %u bytes"), index + len);
+                else
+                {
+                    log(LOG_INFO, (char *)Update.getError());
+                    watchdog_enable();
+                }
+            }
+    });
+#pragma endregion
 
     #pragma region HTTP API ENDPOINTS
     //////////////////////////////

@@ -18,6 +18,9 @@ extern "C"
 #include "log.h"
 #include "utils.h"
 
+void watchdog_enable() { ESP.wdtEnable(WDTO_4S); }
+void watchdog_disable() { ESP.wdtDisable(); }
+
 const char *default_node_name = "EspDmxNode";
 const char *default_ota_password = "dmxnodeota";
 
