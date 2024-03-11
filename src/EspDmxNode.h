@@ -32,7 +32,7 @@ config_t config;
 char hostname[sizeof(config.node_name) + 6];
 
 #define DEBUG_LED_PIN D0
-#define DEBUG_LED_BLINK_CONNECTED_INTERVAL 500
+#define DEBUG_LED_BLINK_CONNECTED_INTERVAL 250
 #define DEBUG_LED_BLINK_DISCONNECTED_INTERVAL 1000
 uint8_t DbgLed_State;
 uint32_t tDbgLed_lastFlip;
