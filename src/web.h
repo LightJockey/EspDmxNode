@@ -72,7 +72,7 @@ bool web_check_ota_auth(AsyncWebServerRequest *request)
 void web_init()
 {
     #pragma region NODE ENDPOINTS
-    webServer.on(PSTR("/"), HTTP_GET, [](AsyncWebServerRequest *request) {
+    auto indexHandler = ([](AsyncWebServerRequest *request) {
         // Client still has a valid cached version
         if (request->header("If-Modified-Since").equals(WEBAPP_LASTMODIFIED))
             request->send(304);
@@ -85,6 +85,7 @@ void web_init()
             request->send(response);
         }
     });
+    webServer.on(PSTR("/"), HTTP_GET, indexHandler);
     webServer.on(PSTR("/status"), HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(HTTPSTATUS_OK, CONTENTTYPE_JSON, status_print());
     });
@@ -289,7 +290,7 @@ void web_init()
     });
     #pragma endregion
 
-    webServer.onNotFound([](AsyncWebServerRequest *request) { request->send(HTTPSTATUS_NOTFOUND); });
+    webServer.onNotFound(wifi_ap_started ? indexHandler : [](AsyncWebServerRequest *request) { request->send(HTTPSTATUS_NOTFOUND); });
 
     webServer.begin();
 
