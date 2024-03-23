@@ -7,7 +7,7 @@
 
 const char *setup_ap_ssid = "EspDmxNode-";
 
-uint8_t mac_address[6];
+uint8_t mac_address[WL_MAC_ADDR_LENGTH];
 
 WiFiEventHandler wifiGotIpHandler, wifiConnectedHandler, wifiDisconnectedHandler;
 uint8_t wifi_mode;

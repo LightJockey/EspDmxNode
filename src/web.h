@@ -135,6 +135,29 @@ void web_init()
         request->send(HTTPSTATUS_OK);
         restart();
     });
+    webServer.on(PSTR("/networks"), HTTP_GET, [](AsyncWebServerRequest *request) {
+        DynamicJsonDocument doc(2048);
+        JsonArray arr = doc.to<JsonArray>();
+
+        int16_t status = WiFi.scanComplete();
+        if (status == WIFI_SCAN_FAILED)
+            WiFi.scanNetworks(true);
+        else if (status >= 0)
+        {
+            for (int i = 0; i < status; i++)
+            {
+                JsonObject netObj = arr.createNestedObject();
+                netObj[F("ssid")] = WiFi.SSID(i);
+                netObj[F("rssi")] = WiFi.RSSI(i);
+            }
+            
+            WiFi.scanDelete();
+
+            AsyncResponseStream *response = request->beginResponseStream(CONTENTTYPE_JSON);
+            serializeJson(arr, *response);
+            request->send(response);
+        }
+    });
     webServer.on(PSTR("/testoutput"), HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(HTTPSTATUS_OK);
         out_isTestingOutput = true;

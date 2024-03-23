@@ -3,10 +3,10 @@
 		<router-link v-bind:to="'/'">Settings</router-link>
 		<router-link v-bind:to="'/status'">Status</router-link>
 		<router-link v-bind:to="'/output'" class="dmx" :class="{ 'on anim': outputEnabled, 'disabled': !outputEnabled }">
-			<span class="label">Output</span>
+			<span class="indicator">Output</span>
 		</router-link>
 		<!--<router-link v-bind:to="'/rdm'" class="dmx" :class="{ on: rdmEnabled }">
-			<span class="label">RDM</span>
+			<span class="indicator">RDM</span>
 		</router-link>-->
 		<slot name="context-actions"></slot>
 	</div>
@@ -31,8 +31,6 @@ export default {
 
 <style scoped>
 #nav {
-	/*margin: 0 0 25px;*/
-	padding: 0 2%;
 	display: flex;
 	column-gap: .5%;
 }

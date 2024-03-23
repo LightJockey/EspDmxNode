@@ -3,7 +3,7 @@
 		<SyncLoader :loading="isFetching" color="#c9dce4"></SyncLoader>
 
 		<div v-if="!isReady && !isFetching">
-			<Section title="Message" class="info centered">
+			<Section title="Error" class="info error centered">
 				<b>Couldn't fetch settings!</b><br><p>{{$root.$data.messages.ERROR_FETCHING_HINT}}</p>
 			</Section>
 		</div>
@@ -17,9 +17,9 @@
 				</span>
 			</Section>
 			<Section title="Filters" class="info centered" collapsable>
-				<a @click="toggleCats('misc')" class="cat" :class="{ on: isCatVisible('misc') }"><span class="label">MISC</span></a>
-				<a @click="toggleCats('dmx')" class="cat dmx" :class="{ on: isCatVisible('dmx') }"><span class="label">OUTPUT</span></a>
-				<a @click="toggleCats('mqtt')" class="cat mqtt" :class="{ on: isCatVisible('mqtt') }"><span class="label">MQTT</span></a>
+				<a @click="toggleCats('misc')" class="chip" :class="{ on: isCatVisible('misc') }"><span class="indicator">MISC</span></a>
+				<a @click="toggleCats('dmx')" class="chip dmx" :class="{ on: isCatVisible('dmx') }"><span class="indicator">OUTPUT</span></a>
+				<a @click="toggleCats('mqtt')" class="chip mqtt" :class="{ on: isCatVisible('mqtt') }"><span class="indicator">MQTT</span></a>
 			</Section>
 
 			<Section cat="misc" :visibleCats="visibleCats" title="General" collapsable>
@@ -36,7 +36,14 @@
 					title="ssid"
 					type="input"
 					:editing="editing"
-					:class="valid($v.config._.wifi_ssid)"/>
+					:class="valid($v.config._.wifi_ssid)">
+					<div slot="head" v-if="editing">
+						<BaseButton @onclicked="fetchNetworks" color="yellow" text="Scan" :spinner="isFetchingNetworks"/>
+					</div>
+					<div v-if="editing && networks.length > 0" style="display: flex; flex-flow: wrap; gap: 4px; margin: 4px auto">
+						<span class="chip" v-for="ssid in networks" @click="setSSID(ssid)">{{ssid}}</span>
+					</div>
+				</Field>
 				<!-- wifi_passphrase -->
 				<Field v-model.trim="$v.config._.wifi_passphrase.$model"
 					type="input"
@@ -355,7 +362,9 @@ export default {
 			editing: false,
 			isFetching: false,
 			isReady: false,
-			config: {}
+			config: {},
+			networks: {},
+			isFetchingNetworks: false
 		}
 	},
 	methods: {
@@ -379,7 +388,7 @@ export default {
 		fetchConfig() {
 			this.isFetching = true
 			this.isReady = false
-	  		fetch('/settings')
+	  		this.$root.fetch('/settings')
 				.then(r => {
 					if (!r.ok) {
 						this.isFetching = false
@@ -408,7 +417,7 @@ export default {
 			let newConfig = JSON.stringify(Object.values(this.config._))
 			console.log(newConfig)
 
-			fetch('/settings/save', {
+			this.$root.fetch('/settings/save', {
 				method: 'POST',
 				body: newConfig
 			}).then(r => {
@@ -423,8 +432,8 @@ export default {
 		resetConfig() {
 			let confirmed = confirm('Are you sure?')
 			if (confirmed)
-				fetch('/settings/reset')
-					.then(r => location.reload())
+				this.$root.fetch('/settings/reset')
+					.then(location.reload())
 		},
 		cloneConfig() {
 			let copy = Object.assign({}, this.$root.$data.config)
@@ -436,6 +445,22 @@ export default {
 				error: v.$error/*,
 				dirty: v.$dirty*/
 			}
+		},
+		fetchNetworks(e) {
+			if (this.isFetchingNetworks)
+				return
+
+			this.networks = {}
+			this.isFetchingNetworks = true
+			this.$root.fetch('/networks')
+				.then(r => r.json()
+					.then(json => json.sort(function(a, b) { return b.rssi - a.rssi }))
+					.then(json => this.networks = json.map(i => i.ssid)))
+				.then(() => { this.isFetchingNetworks = false })
+				.catch(() => { this.isFetchingNetworks = false })
+		},
+		setSSID(ssid) {
+			this.config._.wifi_ssid = ssid
 		}
 	},
 	created() {
@@ -639,20 +664,3 @@ export default {
 	}
 }
 </script>
-
-<style scoped>
-#sub-nav {
-	margin: 10px auto 20px;
-}
-.cat {
-	color: white;
-	background: var(--c-misc);
-	display: inline-block;
-	margin-top: 4px;
-	padding: 4px 8px;
-	/*border-radius: 6px;*/
-	user-select: none;
-}
-.cat.dmx { background: var(--c-dmx); }
-.cat.mqtt { background: var(--c-mqtt); }
-</style>

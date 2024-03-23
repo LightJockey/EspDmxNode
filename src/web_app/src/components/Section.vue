@@ -89,7 +89,7 @@ export default {
 .section.centered .content { text-align: center; }
 .section.info .content {
 	background: var(--c-content-bg);
-	padding: 4px 8px 10px;
+	padding: 10px 8px;
 }
 .section.info .sub p {
 	padding: 0 4px;
@@ -99,13 +99,14 @@ h3 {
 	color: white;
 	background: var(--c-neutral);
 	margin: 0;
-	padding: 3px;
+	padding: .3em;
 	text-align: center;
 	text-transform: uppercase;
 }
 .section.collapsable h3:hover {
 	cursor: pointer;
 }
+.error h3 { background: var(--c-error); }
 .misc h3 { background: var(--c-misc); }
 .dmx h3 { background: var(--c-dmx); }
 
@@ -116,6 +117,7 @@ h3 {
 	width: 100%;
 	margin: 2px 0;
 	padding: 2px 0 0;
+	line-height: 1.5em;
 }
 /deep/ p > b {
 	font-weight: normal;

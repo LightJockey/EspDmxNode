@@ -24,7 +24,7 @@
 			</Section>
 		</div>
 		<div v-else>
-			<Section title="Message" class="info centered">
+			<Section title="Error" class="info error centered">
 				<b>Couldn't fetch status!</b><br><p>{{$root.$data.messages.ERROR_FETCHING_HINT}}</p>
 			</Section>
 		</div>
@@ -58,7 +58,7 @@ export default {
   		this.isFetching = false
   	},
 	fetchStatus() {
-  		fetch('/status')
+  		this.$root.fetch('/status')
   			.then(r => {
 				if (r.ok) {
 	  				r.json()
@@ -67,7 +67,7 @@ export default {
     		})
 	},
 	fetchLogs() {
-  		fetch('/logs')
+		this.$root.fetch('/logs')
 	    	.then(r => {
     			if (r.ok) {
 		    		r.text()
@@ -117,8 +117,8 @@ export default {
 	restartNode() {
 		let confirmed = confirm('Are you sure?')
 		if (confirmed)
-			fetch('/restart')
-				.then(r => location.reload())
+			this.$root.fetch('/restart')
+				.then(location.reload())
 	},
 
 	handleUpdateFile() {
@@ -132,7 +132,7 @@ export default {
 		let fd = new FormData()
 		fd.append('file', this.updateFile)
 		
-		fetch('/update', {
+		this.$root.fetch('/update', {
 			method: 'POST',
 			headers: {
 				'Auth': 'dmxnodeota'
@@ -181,7 +181,6 @@ export default {
 <style scoped>
 /deep/ .sysinfo .content > p {
 	font-size: .8em;
-	background: rgb(230, 230, 230);
 	margin: 4px 0;
 	padding: 2px 4px;
 }

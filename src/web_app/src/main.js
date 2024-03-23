@@ -15,6 +15,7 @@ new Vue({
   router,
   render: h => h(App),
   data: {
+    baseUrl: '',
     messages: {
       ERROR_FETCHING_HINT: "Please check your connection to the node is working."
     },
@@ -82,6 +83,9 @@ new Vue({
     }*/
   },
   methods: {
+    fetch(url, options) {
+      return fetch(this.baseUrl + url, options)
+    },
     setPref(k, v) {
       localStorage.setItem(k, JSON.stringify(v))
     },

@@ -48,7 +48,7 @@ export default {
 	},
 	methods: {
 		fetchData() {
-	  		fetch('/dmx')
+			this.$root.fetch('/dmx')
 		    	.then(r => {
 					if (!r.ok)
 						throw new Error("Couldn't fetch DMX data!")
@@ -115,7 +115,7 @@ export default {
 		testOutput() {
 			let confirmed = confirm('While testing output, all channels on enabled ports will briefly highlight in quick succession.\n\nNOTE: Regular output will stop until testing is completed!\n\nAre you sure?')
 			if (confirmed)
-				fetch('/testoutput')
+				this.$root.fetch('/testoutput')
 		}
 	},
 	computed: {

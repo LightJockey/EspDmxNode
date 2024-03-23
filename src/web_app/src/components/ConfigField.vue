@@ -1,18 +1,22 @@
 <template>
 	<p :class="{ editing: editing }">
 		<b v-html="title"></b>
-		<input v-if="type == 'input'"
-			   :disabled="readonly || !editing"
-			   :type="password ? editing ? 'text' : 'password' : false"
-			   :value="value"
-			   @input="update"
-			   autocomplete="off">
-		<label v-if="type == 'dropdown'">
+		<span v-if="isInput" class="input-container">
+			<input
+				:disabled="readonly || !editing"
+				:type="password ? editing ? 'text' : 'password' : false"
+				:value="value"
+				@input="update"
+				autocomplete="off">
+			<slot name="head"/>
+		</span>
+		<label v-if="isDropdown">
 			<select :disabled="readonly || !editing"
 					@change="update">
 				<option v-for="(option, i) in options" :value="i" :selected="value == i">{{option}}</option>
 			</select>
 		</label>
+		<slot/>
 	</p>
 </template>
 
@@ -29,6 +33,10 @@ export default {
   	editing: Boolean,
   	value: {}
   },
+  computed: {
+	isInput() { return this.type == 'input' },
+	isDropdown() { return this.type == 'dropdown' }
+  },
   methods: {
   	update(e) {
   		this.$emit('input', e.target.value)
@@ -38,17 +46,22 @@ export default {
 </script>
 
 <style scoped>
+.input-container {
+	position: relative;
+	display: flex;
+	gap: 4px;
+}
+
 input, select {
 	font: .8em Verdana;
 	color: rgb(100, 100, 100);
 	background: transparent/*rgb(118, 179, 203)*/;
 	width: 100%;
-	height: 24px;
 	padding: 0 12px;
 	line-height: 24px;
 	box-sizing: padding-box;
-	border: 2px solid rgb(238, 241, 242);
-	border-width: 0 0 2px 0;
+	border: 0;
+	border-bottom: 4px solid rgb(238, 241, 242);
 	appearance: none;
 	-moz-appearance: none;
 	outline: none;

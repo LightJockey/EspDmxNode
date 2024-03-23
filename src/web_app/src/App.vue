@@ -63,6 +63,7 @@
 
   --c-content-bg: rgb(250, 250, 250);
 }
+
 [dark] {
   filter: invert(1) brightness(2.5) hue-rotate(180deg);
 }
@@ -108,16 +109,10 @@ p > i {
 }
 
 #app {
-  /*background: white;*/
-  width: 95%;
-  /*height: 80%;*/
-  margin: 0 auto;
-  /*padding: 10px 30px 30px;*/
+  margin: 0 15%;
 }
 #content {
-  padding: 20px 2%;
-  /*border: 6px solid rgb(201, 220, 228);
-  border-style: solid none;*/
+  margin: 20px 0;
 }
 #content > div {
   display: flex;
@@ -159,10 +154,26 @@ p > i {
   text-align: center;
 }
 
-a span.label {
-  cursor: pointer;
+.chip {
+	color: white;
+	background: var(--c-misc);
+	display: inline-block;
+	margin-top: 4px;
+	padding: 4px 8px;
+	border-radius: 6px;
+	user-select: none;
 }
-a span.label::after {
+.chip * {
+  pointer-events: none;
+}
+.chip:hover {
+	cursor: pointer;
+	filter: brightness(1.05);
+}
+.chip.dmx { background: var(--c-dmx); }
+.chip.mqtt { background: var(--c-mqtt); }
+
+.indicator::after {
   content: ' ';
   display: inline-block;
   background: #acacac;
@@ -170,15 +181,15 @@ a span.label::after {
   padding: 6px;
   border-radius: 100%;
 }
-#nav a span.label::after { margin-right: -6px; }
-a.on span.label::after {
-  background: #8effb0;
-}
-a.on.anim span.label::after{
-  animation: glow .5s step-end infinite;
-}
+#nav .indicator::after { margin-right: -6px; }
+a.on .indicator::after { background: #8effb0; }
+a.on.anim .indicator::after { animation: glow .5s step-end infinite; }
 @keyframes glow {
   0%   { background-color: #9de8b4;; }
   50% { background-color: #8effb0; }
+}
+
+@media only screen and (max-width: 768px) {
+  #app { margin: 0 2%; }
 }
 </style>
