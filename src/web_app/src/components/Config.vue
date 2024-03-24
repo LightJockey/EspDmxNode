@@ -446,18 +446,26 @@ export default {
 				dirty: v.$dirty*/
 			}
 		},
-		fetchNetworks(e) {
+		fetchNetworks() {
 			if (this.isFetchingNetworks)
 				return
 
 			this.networks = {}
 			this.isFetchingNetworks = true
 			this.$root.fetch('/networks')
-				.then(r => r.json()
-					.then(json => json.sort(function(a, b) { return b.rssi - a.rssi }))
-					.then(json => this.networks = json.map(i => i.ssid)))
-				.then(() => { this.isFetchingNetworks = false })
-				.catch(() => { this.isFetchingNetworks = false })
+				.then(r => {
+					r.json()
+						.then(json => json.sort(function(a, b) { return b.rssi - a.rssi }))
+						.then(json => {
+							this.networks = json.map(i => i.ssid)
+							this.isFetchingNetworks = false
+						})
+				})
+				.catch(e => {
+					this.isFetchingNetworks = false
+					// The node returns an empty response at first scan due to the async nature of it -- just retry to get the actual results
+					this.fetchNetworks()
+				})
 		},
 		setSSID(ssid) {
 			this.config._.wifi_ssid = ssid
