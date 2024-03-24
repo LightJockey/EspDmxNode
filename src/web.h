@@ -315,6 +315,9 @@ void web_init()
 
     webServer.onNotFound(wifi_ap_started ? indexHandler : [](AsyncWebServerRequest *request) { request->send(HTTPSTATUS_NOTFOUND); });
 
+    // Allow CORS
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+
     webServer.begin();
 
     logf_P(LOG_INFO, PSTR("Started async webserver on TCP %u"), HTTP_PORT);
