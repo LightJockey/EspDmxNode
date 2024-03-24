@@ -4,8 +4,7 @@
 		<span v-if="isInput" class="input-container">
 			<input
 				:disabled="readonly || !editing"
-				:type="password ? editing ? 'text' : 'password' : false"
-				:value="value"
+				:value="displayedValue"
 				@input="update"
 				autocomplete="off">
 			<slot name="head"/>
@@ -35,7 +34,13 @@ export default {
   },
   computed: {
 	isInput() { return this.type == 'input' },
-	isDropdown() { return this.type == 'dropdown' }
+	isDropdown() { return this.type == 'dropdown' },
+	displayedValue() {
+		if (this.password && !this.editing)
+			return '•'.repeat(this.value.length)
+		else
+			return this.value
+	}
   },
   methods: {
   	update(e) {

@@ -48,7 +48,7 @@
 				<Field v-model.trim="$v.config._.wifi_passphrase.$model"
 					type="input"
 					password
-					title="passphrase"
+					title="password"
 					:editing="editing"
 					:class="valid($v.config._.wifi_passphrase)"/>
 			</Section>
