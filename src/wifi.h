@@ -13,6 +13,7 @@ WiFiEventHandler wifiGotIpHandler, wifiConnectedHandler, wifiDisconnectedHandler
 uint8_t wifi_mode;
 bool wifi_connected;
 bool wifi_ap_started;
+uint8_t wifi_conn_tries;
 
 DNSServer dnsServer;
 
@@ -96,9 +97,14 @@ void wifi_init()
     if ((wifi_mode == 0 && !wifi_ap_started) ||
         (wifi_mode == 1 && WiFi.status() != WL_CONNECTED && !wifi_connected))
     {
-        log_P(LOG_WIFI, PSTR("Disconnected, will now try reconnecting until we succeed"));
         wifi_connect(wifi_mode);
     }
+}
+void wifi_reset()
+{
+    memset(config.wifi_ssid, 0, strlen(config.wifi_ssid));
+    memset(config.wifi_passphrase, 0, strlen(config.wifi_passphrase));
+    wifi_conn_tries = 0;
 }
 void wifi_setup()
 {
@@ -132,7 +138,19 @@ void wifi_setup()
         logf_P(LOG_WIFI, PSTR("Connected to AP \"%s\", channel %i"), WiFi.SSID().c_str(), WiFi.channel());
     });
     wifiDisconnectedHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected& event) {
+        logf_P(LOG_WIFI, PSTR("Disconnected, reason: %u"), event.reason);
         wifi_connected = false;
+
+        if (event.reason == WIFI_DISCONNECT_REASON_AUTH_FAIL ||
+            event.reason == WIFI_DISCONNECT_REASON_AUTH_EXPIRE ||
+            event.reason == WIFI_DISCONNECT_REASON_AUTH_LEAVE ||
+            wifi_conn_tries >= 3)
+        {
+            wifi_reset();
+        }
+        else
+            wifi_conn_tries++;
+
         wifi_init();
     });
 }
